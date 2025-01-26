@@ -6,12 +6,12 @@ uuid = require('uuid');
 const morgan = require('morgan');
 const app = express();
 const mongoose = require('mongoose');
-const Models = require('.models.js');
+const Models = require('./models.js');
 
 const Movies = Models.Movie;
 const Users = Models.Users;
 
-mongoose.connect('mongodb://localhost:27015/test', {
+mongoose.connect('mongodb://localhost:27017/test', {
     useNewUrlParser: true,
     useUnifiedTopology: true,
 });
@@ -20,10 +20,17 @@ app.use(bodyParser.json());
 
 app.use(morgan('common'));
 
+app.use(bodyParser.urlencoded({ extended: true }));
+
+let auth = require('./auth')(app);
+
+const passport = require('passport');
+require('./passport');
+
 
 
 //Add a user
-app.post('/user', async (res, req) => {
+app.post('/user', passport.authenticate('jwt', {session: false }), async (req, res) => {
     await Users.findOne({ Username: req.body.Username })
     .then((user) => {
         if (user) {
@@ -50,7 +57,7 @@ app.post('/user', async (res, req) => {
 });
 
 //Get all users
-app.get('/users', async (req, res) => {
+app.get('/users', passport.authenticate('jwt', {session: false }), async (req, res) => {
     await Users.find()
     .then((users) => {
         res.status(201).json(users);
@@ -62,8 +69,8 @@ app.get('/users', async (req, res) => {
 });
 
 //Get a user by username
-app.get('/users/:Username', async (req, res) => {
-    await Users.findOne({ Username: req.param.Username })
+app.get('/users/:Username', passport.authenticate('jwt', {session: false }), async (req, res) => {
+    await Users.findOne({ Username: req.params.Username })
     .then((users) => {
         res.json(users);
     })
@@ -74,7 +81,7 @@ app.get('/users/:Username', async (req, res) => {
 });
 
 //Update user's info, by username
-app.put('/users/:Username', async (req, res) => {
+app.put('/users/:Username', passport.authenticate('jwt', {session: false }), async (req, res) => {
     await Users.findOneAndUpdate({ Username: req.params.Username }, { $set:
         {
             Username: req.body.Username,
@@ -94,7 +101,7 @@ app.put('/users/:Username', async (req, res) => {
 });
 
 //Add a movie to user's list of favorites
-app.post('/users/:Username/movies/:MovieID', async (req, res) => {
+app.post('/users/:Username/movies/:MovieID', passport.authenticate('jwt', {session: false }), async (req, res) => {
     await Users.findOneAndUpdate({ Username: req.params.Username}, {
         $push: { FavoriteMovies: req.params.MovieID }
     },
@@ -109,8 +116,8 @@ app.post('/users/:Username/movies/:MovieID', async (req, res) => {
 });
 
 //Delete a user by username
-app.delete('/user/:Username', async (req, res) => {
-    await Users.findOneAndRemove({ Username: req.params.username })
+app.delete('/user/:Username', passport.authenticate('jwt', {session: false }), async (req, res) => {
+    await Users.findOneAndRemove({ Username: req.params.Username })
     .then((user) => {
         if (!user) {
             res.status(400).send(req.params.Username + ' was not found');
@@ -120,7 +127,7 @@ app.delete('/user/:Username', async (req, res) => {
     })
     .catch((err) => {
         console.error(err);
-        res.staus(500).send('Error: ' + err);
+        res.status(500).send('Error: ' + err);
     });
 });
 
