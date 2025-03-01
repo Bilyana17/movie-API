@@ -1,4 +1,4 @@
-//Configure passport strategies
+/*Configure passport strategies*/
 
 const passport = require('passport'),
     LocalStrategy = require('passport-local').Strategy,

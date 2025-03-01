@@ -16,10 +16,10 @@ const Users = Models.User;
     useUnifiedTopology: true,
 });*/
 
-mongoose.connect('process.env.CONNECTION_URI', {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-});
+mongoose.connect(process.env.CONNECTION_URI, { 
+    useNewUrlParser: true, 
+    useUnifiedTopology: true
+ });
 
 app.use(bodyParser.json());
 
@@ -68,7 +68,7 @@ app.post('/user',
             .then((user) =>{ res.status(201).json(user) })
            .catch((error) => {
             console.error(error);
-            res.status(500).semd('Error:' + error);
+            res.status(500).send('Error:' + error);
            }) 
         }
     })
@@ -111,7 +111,7 @@ app.put('/users/:Username', passport.authenticate('jwt', {session: false }), asy
         {
             Username: req.body.Username,
             Password: req.body.Password,
-            email: req.body.Email,
+            Email: req.body.Email,
             Birthday: req.body.Birthday
         }
     },
