@@ -25,7 +25,6 @@ const Users = Models.User;
 }); */
 
 app.use(bodyParser.json());
-
 app.use(morgan('common'));
 
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -56,7 +55,7 @@ app.get('/', (req, res) => {
 });
 
 //Get all movies
-app.get('/movies', passport.authenticate('jwt', { session: false }), async (req, res) => {
+app.get('/movies', async (req, res) => {
     await Movies.find()
     .then((movies) => req.status(200).json(movies))
     .catch((err) => res.status(500).send('Error: ' + err));
