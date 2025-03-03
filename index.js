@@ -1,7 +1,7 @@
 //Import mongoose
 const express = require('express'),
 bodyParser = require('body-parser'),
-const uuid = require('uuid');
+uuid = require('uuid');
 const path = require('path');
 const cors = require('cors');
 
@@ -13,10 +13,16 @@ const Models = require('./models.js');
 const Movies = Models.Movie;
 const Users = Models.User;
 
-mongoose.connect(process.env.CONNECTION_URI, { 
-    useNewUrlParser: true, 
-    useUnifiedTopology: true
+//Connect to MongoDB
+ mongoose.connect( process.env.CONNECTION_URI, {
+   useNewUrlParser: true, 
+   useUnifiedTopology: true
  });
+
+ /* mongoose.connect('mongodb://localhost:27017/test', {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+}); */
 
 app.use(bodyParser.json());
 
@@ -199,8 +205,7 @@ app.post('/users/:Username/movies/:MovieID', passport.authenticate('jwt', {sessi
 });
 
 //Delete a user by username
-app.delete('/user/:Username', passport.authenticate('jwt', {session: false }), async (req, res) => {
-    let hashedPassword = Users.hashPassword(req.body.Password);
+app.delete('/user/:Username', passport.authenticate('jwt', { session: false }), async (req, res) => {
     await Users.findOneAndRemove({ Username: req.params.Username })
     .then((user) => {
         if (!user) {
