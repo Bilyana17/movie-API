@@ -1,7 +1,9 @@
 //Import mongoose
 const express = require('express'),
 bodyParser = require('body-parser'),
-uuid = require('uuid');
+const uuid = require('uuid');
+const path = require('path');
+const cors = require('cors');
 
 const morgan = require('morgan');
 const app = express();
@@ -10,11 +12,6 @@ const Models = require('./models.js');
 
 const Movies = Models.Movie;
 const Users = Models.User;
-
-/* mongoose.connect('mongodb://localhost:27017/test', {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-});*/
 
 mongoose.connect(process.env.CONNECTION_URI, { 
     useNewUrlParser: true, 
@@ -27,8 +24,18 @@ app.use(morgan('common'));
 
 app.use(bodyParser.urlencoded({ extended: true }));
 
-const cors = require('cors');
-app.use(cors());
+let allowedOrigins = ['http://localhost:8080', 'http://testsite.com'];
+
+app.use(cors({
+    origin:(origin, callback) => {
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.indexOf(origin) === -1) {
+            let message = `The CORS Policy for this applications doesn't allow access from origin ` + origin;
+            return callback(new Error(message), false);
+        }
+        return callback (null, true);
+    }
+}));
 
 let auth = require('./auth')(app);
 
@@ -37,6 +44,56 @@ require('./passport');
 
 const { check, validationResult } = require('express-validator');
 
+//Get route for homepage
+app.get('/', (req, res) => {
+    res.send('Welcome to my movie-API!');
+});
+
+//Get all movies
+app.get('/movies', passport.authenticate('jwt', { session: false }), async (req, res) => {
+    await Movies.find()
+    .then((movies) => req.status(200).json(movies))
+    .catch((err) => res.status(500).send('Error: ' + err));
+});
+
+// Get data about movie by title
+app.get('/movies/:title', passport.authenticate('jwt', { session: false }), async (req, res) => {
+    await Movies.findOne({ title: req.params.title })
+    .then((movie) => {
+        if (!movie) {
+            res.status(404).send('Movie not found');
+        } else {
+            res.json(movie);
+        }
+    })
+    .catch((err) => res.status(500).send('Error: ', err));
+});
+
+//Get data about a genre by name
+app.get('/genres/:name', passport.authenticate('jwt', { session: false }), async (req, res) => {
+    await Movies.findOne({ 'genre.name': req.params.name })
+    .then((movie) => {
+        if (!movie) {
+            res.status(404).send('Genre not found');
+        } else {
+            res.json(movie.genre);
+        }
+    })
+    .catch((err) => res.status(500).send('Error: ', err));
+});
+
+//Get data about director by name
+app.get('/directors/:name', passport.authenticate('jwt', { session: false }), async (req, res) => {
+    await Movies.findOne({ 'director.name': req.params.name })
+    .then((movie) => {
+        if (!movie) {
+            res.status(404).send('Director not found');
+        } else {
+            res.json(movie.director);
+        }
+    })
+    .catch((err) => req.status(500).send('Error: ', err));
+});
 
 //Add a user
 app.post('/user',
