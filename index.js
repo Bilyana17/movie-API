@@ -32,10 +32,10 @@ app.use(bodyParser.urlencoded({ extended: true }));
 let allowedOrigins = ['http://localhost:8080', 'http://testsite.com'];
 
 app.use(cors({
-    origin:(origin, callback) => {
+    origin: (origin, callback) => {
         if (!origin) return callback(null, true);
-        if (allowedOrigins.indexOf(origin) === -1) {
-            let message = `The CORS Policy for this applications doesn't allow access from origin ` + origin;
+        if (allowedOrigins.indexOf(origin) === -1) { // If a specific origin isn’t found on the list of allowed origins
+            let message = 'The CORS policy for this application doesn’t allow access from origin ' + origin;
             return callback(new Error(message), false);
         }
         return callback (null, true);
@@ -107,12 +107,11 @@ app.post('/user',
         check('Username', 'Username contains non alphanumeric characters - not allowed').isAlphanumeric(),
         check('Password', 'Password is required').not().isEmpty(),
         check('Email', 'Email does not appear to be valid').isEmail()
-    ], 
-     passport.authenticate('jwt', {session: false }), async (req, res) => {
+    ],  async (req, res) => {
         let errors = validationResult(req);
 
         if (!errors.isEmpty()) {
-            return res.status(422).json({ errors: errors.array( )});
+            return res.status(422).json({ errors: errors.array() });
         }
     let hashedPassword = Users.hashPassword(req.body.Password);
     await Users.findOne({ Username: req.body.Username })
@@ -123,7 +122,7 @@ app.post('/user',
             Users
             .create({
                 Username: req.body.Username,
-                Password: req.body.Password,
+                Password: hashedPassword,
                 Email: req.body.Email,
                 Birthday: req.body.Birthday
             })
@@ -131,7 +130,7 @@ app.post('/user',
            .catch((error) => {
             console.error(error);
             res.status(500).send('Error:' + error);
-           }) 
+           }); 
         }
     })
     .catch((error) => {
@@ -142,7 +141,6 @@ app.post('/user',
 
 //Get all users
 app.get('/users', passport.authenticate('jwt', {session: false }), async (req, res) => {
-    let hashedPassword = Users.hashPassword(req.body.Password);
     await Users.find()
     .then((users) => {
         res.status(201).json(users);
@@ -155,7 +153,6 @@ app.get('/users', passport.authenticate('jwt', {session: false }), async (req, r
 
 //Get a user by username
 app.get('/users/:Username', passport.authenticate('jwt', {session: false }), async (req, res) => {
-    let hashedPassword = Users.hashPassword(req.body.Password);
     await Users.findOne({ Username: req.params.Username })
     .then((users) => {
         res.json(users);
@@ -168,7 +165,6 @@ app.get('/users/:Username', passport.authenticate('jwt', {session: false }), asy
 
 //Update user's info, by username
 app.put('/users/:Username', passport.authenticate('jwt', {session: false }), async (req, res) => {
-    let hashedPassword = Users.hashPassword(req.body.Password);
     await Users.findOneAndUpdate({ Username: req.params.Username }, { $set:
         {
             Username: req.body.Username,
@@ -189,7 +185,6 @@ app.put('/users/:Username', passport.authenticate('jwt', {session: false }), asy
 
 //Add a movie to user's list of favorites
 app.post('/users/:Username/movies/:MovieID', passport.authenticate('jwt', {session: false }), async (req, res) => {
-    let hashedPassword = Users.hashPassword(req.body.Password);
     await Users.findOneAndUpdate({ Username: req.params.Username}, {
         $push: { FavoriteMovies: req.params.MovieID }
     },
